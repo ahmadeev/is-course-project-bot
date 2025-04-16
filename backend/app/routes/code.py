@@ -62,6 +62,49 @@ def start_code_generation():
         return jsonify({'error': 'Internal server error'}), 500
 
 
+@code_bp.route('/code/stop', methods=['POST'])
+def stop_code_generation():
+    logger.info(f"Stopping code generation for request: {request.get_json()}")
+
+    try:
+        data = request.get_json()
+        telegram_id = data.get('telegram_id')
+
+        if not telegram_id:
+            logger.warning(f"Telegram ID is missing")
+            return jsonify({'error': 'Telegram ID is required'}), 400
+
+        user = User.query.filter_by(telegram_id=telegram_id).first()
+        if not user:
+            logger.warning(f"User with telegram_id {telegram_id} not found")
+            return jsonify({'error': 'User not found'}), 404
+
+        active_sessions = Session.query.filter_by(user_id=user.id, is_active=True).all()
+        session_count = len(active_sessions)
+
+        if session_count >= 1:
+            for session in active_sessions:
+                session.is_active = False
+                db.session.add(session)
+                Code.query.filter_by(session_id=session.id).update({'is_expired': True})
+                logger.info(f"Closed session {session.id} for telegram_id {telegram_id}")
+
+        try:
+            db.session.commit()
+        except Exception as e:
+            logger.error(f"Failed to commit session and code updates: {str(e)}")
+            db.session.rollback()
+            return jsonify({'error': 'Failed to stop code generation'}), 500
+
+        logger.info(f"Stopped code generation for sessions, telegram_id {telegram_id}")
+        return jsonify({'message': 'Code generation stopped'}), 200
+
+    except Exception as e:
+        logger.error(f"Error stopping code generation: {str(e)}", exc_info=True)
+        db.session.rollback()
+        return jsonify({'error': 'Internal server error'}), 500
+
+
 @code_bp.route('/code/verify', methods=['POST'])
 def verify_code():
     try:
