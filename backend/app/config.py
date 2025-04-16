@@ -13,3 +13,4 @@ class Config:
     SECRET_KEY = getenv("SECRET_KEY")
 
     TELEGRAM_TOKEN = getenv("TELEGRAM_TOKEN")
+    JAVA_SERVER_URL = getenv("JAVA_SERVER_URL", "http://jakarta-ee:8080/api")
