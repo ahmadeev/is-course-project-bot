@@ -28,10 +28,17 @@ def start_code_generation():
             logger.warning(f"User with telegram_id {telegram_id} not found")
             return jsonify({'error': 'User not found'}), 404
 
-        session_count = Session.query.filter_by(user_id=user.id).count()
-        if session_count > 1:
-            logger.error(f"User with telegram_id {telegram_id} has {session_count} sessions")
-            return jsonify({'error': 'User has more than one session'}), 500
+        active_sessions = Session.query.filter_by(user_id=user.id, is_active=True).all()
+        session_count = len(active_sessions)
+
+        if session_count >= 1:
+            logger.info(f"User with telegram_id {telegram_id} has {session_count} active sessions")
+            for session in active_sessions:
+                session.is_active = False
+                db.session.add(session)
+                Code.query.filter_by(session_id=session.id).update({'is_expired': True})
+                logger.info(f"Closed session {session.id} for telegram_id {telegram_id}")
+            db.session.commit()
 
         session = Session(user_id=user.id)
         db.session.add(session)
