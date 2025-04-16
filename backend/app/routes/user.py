@@ -31,7 +31,7 @@ def create_user():
             return jsonify({'message': 'Username required'}), 201
 
         # запрос к Java-серверу
-        java_server_url = current_app.config.get('JAVA_SERVER_URL', 'http://jakarta-ee:8080/api/telegram-bot/user') + "/telegram-bot/user"
+        java_server_url = current_app.config.get('JAVA_SERVER_URL', 'http://jakarta-ee:8080/api/telegram-bot/user') + "/auth/telegram-bot/user"
         java_payload = {
             'telegram_id': telegram_id,
             'username': username
@@ -48,7 +48,7 @@ def create_user():
                 return jsonify({'error': 'Failed to register on Java server'}), 500
 
             java_response_data = java_response.json()
-            if not java_response_data.get('success', False): # TODO: а?
+            if java_response_data.get('status', "ERROR") != "SUCCESS":
                 logger.warning(f"Java server rejected registration: {java_response_data}")
                 return jsonify({'error': java_response_data.get('message', 'Registration failed')}), 400
 

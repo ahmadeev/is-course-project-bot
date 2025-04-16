@@ -28,6 +28,11 @@ def start_code_generation():
             logger.warning(f"User with telegram_id {telegram_id} not found")
             return jsonify({'error': 'User not found'}), 404
 
+        session_count = Session.query.filter_by(user_id=user.id).count()
+        if session_count > 1:
+            logger.error(f"User with telegram_id {telegram_id} has {session_count} sessions")
+            return jsonify({'error': 'User has more than one session'}), 500
+
         session = Session(user_id=user.id)
         db.session.add(session)
         db.session.commit()
@@ -77,7 +82,7 @@ def verify_code():
         db.session.commit()
 
         logger.info(f"Code {code} verified for session {session_id}")
-        return jsonify({'message': 'Code verified'}), 200
+        return jsonify({'message': 'Code verified', 'verified': True}), 200
 
     except Exception as e:
         logger.error(f"Error verifying code: {str(e)}")

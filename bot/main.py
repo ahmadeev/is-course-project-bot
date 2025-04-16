@@ -12,7 +12,7 @@ def main():
         # application = Application.builder().token(TELEGRAM_TOKEN).build()
         application = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 
-        application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
+        # application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
         application.add_handler(conv_handler)
 
         application.run_polling(allowed_updates=["message"])
